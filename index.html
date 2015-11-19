@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>draw_bar_box</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+<div class="header">
+	<input type="text" id="searchKey"/>
+	<button id="btnSearch">用户查询</button>
+	<!--<button id="btnAdd">添加用户</button>-->
+</div>
+
+
+<div class="leftArea">
+<ul id="wineList"></ul>
+</div>
+
+<form id="wineForm">
+	
+<div class="mainArea">
+
+<label>Id:</label>
+<input id="wineId" name="id" type="text" />
+
+<label>姓名:</label>
+<input type="text" id="name" name="name" required>
+
+<label>性别:</label>
+<input type="text" id="grapes" name="grapes"/>
+
+<label>调试信息:</label>
+<input type="text" id="country" name="country"/>
+
+<label>保留:</label>
+<input type="text" id="region" name="region"/>
+
+<label>保留:</label>
+<input type="text" id="year" name="year"/>
+
+<button id="btnSave">更新</button>
+<button id="btnDelete">删除</button>
+
+</div>
+
+<div class="rightArea">
+
+<img id="pic" height="300"/>
+
+<label>Notes:</label>
+<textarea id="description" name="description">性别中1代表男，0代表女</textarea>
+</div>
+
+</form>
+
+<script src="cellar/js/jquery-1.7.1.min.js"></script>
+<script src="cellar/js/main.js"></script>
+
+</body>
+</html>
