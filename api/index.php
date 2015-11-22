@@ -14,10 +14,16 @@ $app->delete('/users/:id',	'deleteUser');
 $app->get('/','getAll');
  
 $app->get('/gps/:userId', 'getGps'); 
-$app->get('/gps/:userId,:start,:end', 'getGpsBetween');
+$app->get('/gps/:userId/:start/:end', 'getGpsBetween');
 $app->post('/gps', 'addGps');
 
 $app->post('/test', 'addTest');
+$app->get('/test/:a', function($a){
+	echo '{"/test/:a"}';
+});
+$app->get('/test/:a/:b', function($a, $b){
+	echo '{"/test/:a/:b"}';
+});
 $app->run();
 
 function getUsers() {
