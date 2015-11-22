@@ -12,8 +12,12 @@ $app->put('/users/:id', 'updateUser');
 $app->delete('/users/:id',	'deleteUser');
 
 $app->get('/','getAll');
+ 
+$app->get('/gps/:userId', 'getGps'); 
+$app->get('/gps/:userId,:start,:end', 'getGpsBetween');
+$app->post('/gps', 'addGps');
 
-
+$app->post('/test', 'addTest');
 $app->run();
 
 function getUsers() {
@@ -119,6 +123,86 @@ function findByName($query) {
 	}
 }
 
+
+
+
+function getGps($userId) {
+	$sql = "SELECT * FROM gps WHERE userId=:userId";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("userId", $userId);
+		$stmt->execute();
+		$gps = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$db = null;
+		echo '{"gps": ' . json_encode($gps) . '}';
+	} catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function getGpsBetween($userId, $start, $end) {
+	$sql = "SELECT * FROM gps WHERE userId=:userId and timeStamp between :start and :end";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("userId", $userId);
+		$stmt->bindParam("start", $start);
+		$stmt->bindParam("end", $end);
+		$stmt->execute();
+		$gps = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$db = null;
+		echo '{"gps": ' . json_encode($gps) . '}';
+	} catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+
+function addGps() {
+	error_log('\naddGps\n', 3, '/var/tmp/php.log');
+	$request = Slim::getInstance()->request();
+	$gps = json_decode($request->getBody());
+	$sql = "INSERT INTO gps (userId, id, timeStamp, latitude, longtitude, altitude, hAccuracy, vAccuracy, speed) VALUES (:userId, :id, :timeStamp, :latitude, :longtitude, :altitude, :hAccuracy, :vAccuracy, :speed)";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("userId", $gps->userId);
+		$stmt->bindParam("id", $gps->id);
+		$stmt->bindParam("timeStamp", $gps->timeStamp);
+		$stmt->bindParam("latitude", $gps->latitude);
+		$stmt->bindParam("longtitude", $gps->longtitude);
+		$stmt->bindParam("altitude", $gps->altitude);
+		$stmt->bindParam("hAccuracy", $gps->hAccuracy);
+		$stmt->bindParam("vAccuracy", $gps->vAccuracy);
+		$stmt->bindParam("speed", $gps->speed);
+		$stmt->execute();
+		$gps->id = $db->lastInsertId();
+		$db = null;
+		echo json_encode($gps); 
+	} catch(PDOException $e) {
+		error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function addTest() {
+	error_log('\naddTest\n', 3, '/var/tmp/php.log');
+	$request = Slim::getInstance()->request();
+	$test = json_decode($request->getBody());
+	$sql = "INSERT INTO test VALUES (:test)";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("test", $test->test);
+		$stmt->execute();
+		$db = null;
+		echo json_encode($test); 
+	} catch(PDOException $e) {
+		error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
 function getConnection() {
 	$dbhost="127.0.0.1";
 	$dbuser="root";
