@@ -139,9 +139,12 @@ function getGps($userId) {
 		$stmt = $db->prepare($sql);  
 		$stmt->bindParam("userId", $userId);
 		$stmt->execute();
-		$gps = $stmt->fetchAll(PDO::FETCH_OBJ);
+		//while($gps=$stmt->fetch());
+		$gpsAll = $stmt->fetchAll(PDO::FETCH_OBJ);
+	        $gps = array_pop($gpsAll);		
 		$db = null;
-		echo '{"gps": ' . json_encode($gps) . '}';
+		echo json_encode($gps);
+		//echo '{"gps": ' . json_encode($gps) . '}';
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
