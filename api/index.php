@@ -11,9 +11,14 @@ $app->post('/users', 'addUser');
 $app->put('/users/:id', 'updateUser');
 $app->delete('/users/:id',	'deleteUser');
 
+$app->post('/login', 'login');
+
+
+
 $app->get('/','getAll');
  
 $app->get('/gps/:userId', 'getGps'); 
+$app->get('/gps/:userId/:n', 'getLatestNGps'); 
 $app->get('/gps/:userId/:start/:end', 'getGpsBetween');
 $app->post('/gps', 'addGps');
 
@@ -62,6 +67,7 @@ function addUser() {
 	error_log('\naddUser\n', 3, '/var/tmp/php.log');
 	$request = Slim::getInstance()->request();
 	$user = json_decode($request->getBody());
+	echo $request->getBody();
 	$sql = "INSERT INTO user (id, name, sex, debug) VALUES (:id, :name, :sex, :debug)";
 	try {
 		$db = getConnection();
@@ -130,6 +136,24 @@ function findByName($query) {
 }
 
 
+function login() {
+	error_log('\nlogin\n', 3, '/var/tmp/php.log');
+	$request = Slim::getInstance()->request();
+	$param = json_decode($request->getBody());
+	$sql = "SELECT * FROM user WHERE phoneNumber=:phoneNumber";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("phoneNumber", $param->phoneNumber);
+		$stmt->execute();
+		$user = $stmt->fetchObject();  
+		$db = null;
+		echo json_encode($user); 
+	} catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
 
 
 function getGps($userId) {
@@ -167,7 +191,24 @@ function getGpsBetween($userId, $start, $end) {
 	}
 }
 
+function getLatestNGps($userId, $n)
+{
 
+	$sql = "SELECT * FROM gps WHERE userId=:userId";
+	echo $sql;
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("userId", $userId);
+		$stmt->execute();
+		$allGps = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$gps = array_slice($allGps, count($allGps) - $n, count($allGps) - 1);
+		$db = null;
+		echo '{"gps": ' . json_encode($gps) . '}';
+	} catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
 function addGps() {
 	error_log('\naddGps\n', 3, '/var/tmp/php.log');
 	$request = Slim::getInstance()->request();
