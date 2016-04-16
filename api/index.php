@@ -283,9 +283,11 @@ function sendNotification($userId, $content)
     //唯一要修改的就是：ssl://gateway.sandbox.push.apple.com:2195这个是沙盒测试地址，ssl://gateway.push.apple.com:2195正式发布地址  
 
     $ctx = stream_context_create();  
-    stream_context_set_option($ctx, 'ssl', 'local_cert', 'ck.pem');    
+    stream_context_set_option($ctx, 'ssl', 'local_cert', 'apple_push_notification_distribution.pem');    
     stream_context_set_option($ctx, 'ssl', 'passphrase', $pass);  
-    $fp = stream_socket_client('ssl://gateway.sandbox.push.apple.com:2195', $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);  
+    //$fp = stream_socket_client('ssl://gateway.sandbox.push.apple.com:2195', $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);  
+    $fp = stream_socket_client("ssl://gateway.push.apple.com:2195", $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);
+
     if (!$fp) {  
         error_log('\nfail to connect to server\n', 3, '/var/tmp/php.log');
  //      print "Failed to connect $err $errstr\n";  
@@ -424,7 +426,7 @@ function addGps() {
 	error_log('\naddGps\n', 3, '/var/tmp/php.log');
 	$request = Slim::getInstance()->request();
 	$gps = json_decode($request->getBody());
-	$sql = "INSERT INTO gps (userId, id,deviceId, timeStamp, latitude, longtitude, altitude, hAccuracy, vAccuracy, speed) VALUES (:userId, :id, :deviceId, :timeStamp, :latitude, :longtitude, :altitude, :hAccuracy, :vAccuracy, :speed)";
+	$sql = "INSERT INTO gps (userId, id,deviceId, timeStamp, latitude, longtitude, altitude, hAccuracy, vAccuracy, speed,battery) VALUES (:userId, :id, :deviceId, :timeStamp, :latitude, :longtitude, :altitude, :hAccuracy, :vAccuracy, :speed,:battery)";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);  
@@ -438,6 +440,7 @@ function addGps() {
 		$stmt->bindParam("hAccuracy", $gps->hAccuracy);
 		$stmt->bindParam("vAccuracy", $gps->vAccuracy);
 		$stmt->bindParam("speed", $gps->speed);
+		$stmt->bindParam("battery", $gps->battery);
 		$stmt->execute();
 		$gps->id = $db->lastInsertId();
 		$db = null;
