@@ -14,6 +14,9 @@ $app->delete('/users/:id',	'deleteUser');
 $app->post('/login', 'login');
 $app->post('/register', 'register');
 
+$app->post('/deviceToken', 'deviceToken');
+$app->post('/testNotification', 'testNotification');
+
 $app->post('/bonddevice', 'bondDevice');
 $app->post('/unbonddevice', 'unbondDevice');
 
@@ -35,6 +38,15 @@ $app->get('/test/:a/:b', function($a, $b){
 	echo '{"/test/:a/:b"}';
 });
 $app->run();
+
+
+//set_time_limit(0);//让程序一直执行下去
+//$interval=3;//每隔一定时间运行
+//do{
+//    testNotification();
+//    sleep($interval);//等待时间，进行下一次操作。
+//}while(true);
+
 
 function getUsers() {
 	$sql = "select * FROM user ORDER BY name";
@@ -208,6 +220,91 @@ function login() {
 	} catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
+}
+
+function deviceToken()
+{
+	error_log('\ndeviceToken\n', 3, '/var/tmp/php.log');
+	$request = Slim::getInstance()->request();
+	$param = json_decode($request->getBody());
+	$sql = "UPDATE user SET deviceToken=:deviceToken where id=:id";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("id", $param->userId);
+		$stmt->bindParam("deviceToken", $param->deviceToken);
+		$stmt->execute();
+		$db = null;
+		echo '{"ok":1}';
+	} catch(PDOException $e) {
+		error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function sendNotification($userId, $content)
+{
+
+        error_log('\nsend notification\n', 3, '/var/tmp/php.log');
+
+        $deviceToken = '';  
+	$sql = "SELECT * FROM user where id=:id";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);  
+		$stmt->bindParam("id", $userId);
+		$stmt->execute();
+		$user = $stmt->fetchObject();
+	        $deviceToken = $user->deviceToken;	
+		$db = null;
+	} catch(PDOException $e) {
+		error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+    //ck.pem通关密码  
+    $pass = '123456';     
+    //消息内容  
+    $message = $content;  
+    $badge = 1;  
+    $sound = 'Duck.wav';  
+    //建设的通知有效载荷（即通知包含的一些信息）  
+    $body = array();  
+    $body['id'] = "4f94d38e7d9704f15c000055";  
+    $body['aps'] = array('alert' => $message);  
+    if ($badge)  
+      $body['aps']['badge'] = $badge;  
+    if ($sound)  
+      $body['aps']['sound'] = $sound;  
+    //把数组数据转换为json数据  
+    $payload = json_encode($body);  
+//    echo strlen($payload),"\r\n";  
+  
+    //下边的写法就是死写法了，一般不需要修改，  
+    //唯一要修改的就是：ssl://gateway.sandbox.push.apple.com:2195这个是沙盒测试地址，ssl://gateway.push.apple.com:2195正式发布地址  
+
+    $ctx = stream_context_create();  
+    stream_context_set_option($ctx, 'ssl', 'local_cert', 'ck.pem');    
+    stream_context_set_option($ctx, 'ssl', 'passphrase', $pass);  
+    $fp = stream_socket_client('ssl://gateway.sandbox.push.apple.com:2195', $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);  
+    if (!$fp) {  
+        error_log('\nfail to connect to server\n', 3, '/var/tmp/php.log');
+ //      print "Failed to connect $err $errstr\n";  
+       return;  
+    }  
+    else {  
+        error_log('\nsuccess to connect to server\n', 3, '/var/tmp/php.log');
+  //     print "Connection OK\n<br/>";  
+    }  
+    // send message  
+    $msg = chr(0) . pack("n",32) . pack('H*', str_replace(' ', '', $deviceToken)) . pack("n",strlen($payload)) . $payload;  
+   // print "Sending message :" . $payload . "\n";    
+    fwrite($fp, $msg);  
+    fclose($fp);  
+}
+function testNotification()
+{
+    error_log('\ntest notification\n', 3, '/var/tmp/php.log');
+    sendNotification(49,'abcd'); 
 }
 
 function bondDevice() {
